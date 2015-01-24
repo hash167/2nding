@@ -14,25 +14,15 @@
             Polymer('movie-list', {
                 movies: [],
                 movies_temp: [],
-               // search_url: "../../scripts/in_theaters.json", //change made
-                search_url: "http://api.rottentomatoes.com/api/public/v1.0/lists/movies/in_theaters.json?apikey=t2zh67hechwzptrwymxxyav4",
+               search_url: "../../scripts/in_theaters.json", //change made
+               // search_url: "http://api.rottentomatoes.com/api/public/v1.0/lists/movies/in_theaters.json?apikey=t2zh67hechwzptrwymxxyav4",
                 
                 
                 moviesLoaded: function() {
 
                     this.movies = this.$.ajax.response.movies;
-                       this.movies_temp = this.$.ajax.response.movies;
-                      /*  if (this.search_for_movie != ""){
-                            for (var i = 0; i < this.movies_temp.length; i++) { 
-                            console.log("Keys are Pressed");
-                             this.movies = this.movies_temp;
-                            }
-
-                        }
-                        else
-                        {
-                            this.movies = this.movies_temp;
-                        }*/
+                    this.movies_temp = this.$.ajax.response.movies;
+                      
                     //this.fire('movies-loaded');
 
                     // temporarily, for demo purposes
