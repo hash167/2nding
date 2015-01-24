@@ -3,24 +3,50 @@
 <link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../../bower_components/core-icons/core-icons.html">
 <link rel="import" href="../../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../header-bar/header-bar.html">
+
 
 <polymer-element name="header-bar" attributes="">
     <template>
         <link rel="stylesheet" href="../../styles/header-bar.css">
         <core-toolbar>
             <span id="inTheatersNow" flex hidden?="{{!search_is_off}}">In Theaters Now</span>
-            <paper-input id="searchInput" flex label="Search by title" hidden?="{{search_is_off}}"></paper-input>
+            <paper-input name="searchInput" id="searchInput" flex label="Search by title" hidden?="{{search_is_off}}" value="{{search_for_movie}}" on-keyup="{{value_search}}"></paper-input>
             <paper-icon-button on-click="{{toggleSearch}}" icon="{{icon}}"></paper-icon-button>
         </core-toolbar>
     </template>
     <script>
+   /* var word="";
+    function myKeyPress(e){
+
+            var keynum;
+            
+
+            if(window.event){ // IE                 
+                keynum = e.keyCode;
+            }else
+                if(e.which){ // Netscape/Firefox/Opera                  
+                    keynum = e.which;
+                 }
+           word =  word+String.fromCharCode(keynum);
+           console.log(word);
+        }*/
         (function () {
+
+
             Polymer('header-bar', {
                 search_is_off: true,
                 icon: 'search',
+                search_for_movie: "",
+               // keys_pressed: false, // Made a change
                 ready: function() {
                     console.log("header-bar ready");
+                    var self = this;
                 },
+                value_search: function(){
+                    console.log("event");
+                },
+               //change made
                 toggleSearch: function() {
                     if (this.search_is_off) { // then turn it on
                         this.icon = 'clear';

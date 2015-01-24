@@ -4,7 +4,7 @@
 
 <polymer-element name="movie-list" attributes="">
     <template>
-        <core-ajax id="ajax" auto url="../../scripts/in_theaters.json" on-core-response="{{moviesLoaded}}" handleAs="json"></core-ajax>
+        <core-ajax id="ajax" auto url="{{search_url}}" on-core-response="{{moviesLoaded}}" handleAs="json"></core-ajax>
         <template repeat="{{movie in movies}}">
             <movie-card mtitle="{{movie.title}}" poster="{{movie.posters.thumbnail}}"></movie-card>
         </template>
@@ -13,11 +13,26 @@
         (function () {
             Polymer('movie-list', {
                 movies: [],
-                ready: function() {
-                    console.log("movie-list ready");
-                },
+                movies_temp: [],
+               // search_url: "../../scripts/in_theaters.json", //change made
+                search_url: "http://api.rottentomatoes.com/api/public/v1.0/lists/movies/in_theaters.json?apikey=t2zh67hechwzptrwymxxyav4",
+                
+                
                 moviesLoaded: function() {
+
                     this.movies = this.$.ajax.response.movies;
+                       this.movies_temp = this.$.ajax.response.movies;
+                      /*  if (this.search_for_movie != ""){
+                            for (var i = 0; i < this.movies_temp.length; i++) { 
+                            console.log("Keys are Pressed");
+                             this.movies = this.movies_temp;
+                            }
+
+                        }
+                        else
+                        {
+                            this.movies = this.movies_temp;
+                        }*/
                     //this.fire('movies-loaded');
 
                     // temporarily, for demo purposes
