@@ -1,21 +1,26 @@
 <link rel="import" href="../../bower_components/polymer/polymer.html">
 <link rel="import" href="../../bower_components/core-ajax/core-ajax.html">
+<link rel="import" href="../../bower_components/core-shared-lib/core-shared-lib.html">
 <link rel="import" href="../movie-card/movie-card.html">
 
 <polymer-element name="movie-list" attributes="">
     <template>
-        <core-ajax id="ajax" auto url="{{search_url}}" on-core-response="{{moviesLoaded}}" handleAs="json"></core-ajax>
+       <core-ajax id="ajax" auto url="{{search_url}}" on-core-response="{{moviesLoaded}}" handleAs="json"></core-ajax>
         <template repeat="{{movie in movies}}">
             <movie-card mtitle="{{movie.title}}" poster="{{movie.posters.thumbnail}}"></movie-card>
         </template>
     </template>
     <script>
         (function () {
+            addEventListener('core-shared-lib-load', function() {
+      console.log('client.js lib load notify');
+    });
             Polymer('movie-list', {
                 movies: [],
                 movies_temp: [],
-               search_url: "../../scripts/in_theaters.json", //change made
-               // search_url: "http://api.rottentomatoes.com/api/public/v1.0/lists/movies/in_theaters.json?apikey=t2zh67hechwzptrwymxxyav4",
+                search_url:"http://api.themoviedb.org/3/movie/now_playing?api_key=053bc4c358ed49c08f6b0d197c632c49",
+               search_url: "../../scripts/in_theaters.json?onload=%%callback%%", //change made
+             //  search_url: "http://api.rottentomatoes.com/api/public/v1.0/lists/movies/in_theaters.json?apikey=t2zh67hechwzptrwymxxyav4onload=%%callback%%",
                 
                 
                 moviesLoaded: function() {
