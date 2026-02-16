@@ -7,7 +7,7 @@
     <template>
        <core-ajax id="ajax" auto url="{{search_url}}" on-core-response="{{moviesLoaded}}" handleAs="json"></core-ajax>
         <template repeat="{{movie in movies}}">
-            <movie-card mtitle="{{movie.title}}" poster="{{movie.posters.thumbnail}}"></movie-card>
+            <movie-card mid="{{movie.id}}" mtitle="{{movie.title}}" poster="{{movie.posters.thumbnail}}"></movie-card>
         </template>
     </template>
     <script>
@@ -18,15 +18,28 @@
             Polymer('movie-list', {
                 movies: [],
                 movies_temp: [],
-                search_url:"http://api.themoviedb.org/3/movie/now_playing?api_key=053bc4c358ed49c08f6b0d197c632c49",
-               search_url: "../../scripts/in_theaters.json?onload=%%callback%%", //change made
-             //  search_url: "http://api.rottentomatoes.com/api/public/v1.0/lists/movies/in_theaters.json?apikey=t2zh67hechwzptrwymxxyav4onload=%%callback%%",
-                
+                search_url: "/api/movies/now_playing",
+                search_query: '',
+
+                applyFilter: function(query) {
+                    var normalizedQuery = (query || '').toLowerCase();
+                    this.search_query = normalizedQuery;
+
+                    if (!normalizedQuery) {
+                        this.movies = this.movies_temp.slice(0);
+                        return;
+                    }
+
+                    this.movies = this.movies_temp.filter(function(movie) {
+                        return (movie.title || '').toLowerCase().indexOf(normalizedQuery) !== -1;
+                    });
+                },
                 
                 moviesLoaded: function() {
 
                     this.movies = this.$.ajax.response.movies;
                     this.movies_temp = this.$.ajax.response.movies;
+                    this.applyFilter(this.search_query);
                       
                     //this.fire('movies-loaded');
 
@@ -35,6 +48,13 @@
                     setTimeout(function(){
                         self.fire('movies-loaded');
                     }, 2000);
+                },
+
+                ready: function() {
+                    var self = this;
+                    document.addEventListener('movie-search', function(e) {
+                        self.applyFilter(e.detail && e.detail.query ? e.detail.query : '');
+                    });
                 }
             });
         })();

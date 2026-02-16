@@ -1,11 +1,10 @@
-(function (document) {
+(function (doc) {
     'use strict';
 
-    document.addEventListener('polymer-ready', function () {
+    doc.addEventListener('polymer-ready', function () {
         // Perform some behaviour
         console.log('Polymer is ready to rock!');
     });
 
-// wrap document so it plays nice with other libraries
-// http://www.polymer-project.org/platform/shadow-dom.html#wrappers
-})(wrap(document));
+// Use ShadowDOM polyfill wrapper when available, otherwise use the real document.
+})(typeof wrap === 'function' ? wrap(document) : document);

@@ -3,12 +3,14 @@
 <link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../../bower_components/core-icons/core-icons.html">
 <link rel="import" href="../../bower_components/paper-input/paper-input.html">
-<link rel="import" href="../header-bar/header-bar.html">
 
 
 <polymer-element name="header-bar" attributes="">
     <template>
         <link rel="stylesheet" href="../../styles/header-bar.css">
+        <div id="logoWrap">
+            <img id="logo" src="../../images/2nding.gif" alt="2nding">
+        </div>
         <core-toolbar>
             <span id="inTheatersNow" flex hidden?="{{!search_is_off}}">In Theaters Now</span>
             <paper-input name="searchInput" id="searchInput" flex label="Search by title" hidden?="{{search_is_off}}" value="{{search_for_movie}}" on-keyup="{{value_search}}"></paper-input>
@@ -43,8 +45,21 @@
                     console.log("header-bar ready");
                     var self = this;
                 },
+                emitSearch: function(query) {
+                    var searchEvent;
+                    var detail = { query: query || '' };
+
+                    if (typeof CustomEvent === 'function') {
+                        searchEvent = new CustomEvent('movie-search', { detail: detail });
+                    } else {
+                        searchEvent = document.createEvent('CustomEvent');
+                        searchEvent.initCustomEvent('movie-search', false, false, detail);
+                    }
+
+                    document.dispatchEvent(searchEvent);
+                },
                 value_search: function(){
-                    console.log("event");
+                    this.emitSearch(this.search_for_movie);
                 },
                //change made
                 toggleSearch: function() {
@@ -55,6 +70,8 @@
                         this.icon = 'search';
                         this.search_is_off = true;
                         this.$.searchInput.value = '';
+                        this.search_for_movie = '';
+                        this.emitSearch('');
                     }
                 }
             });

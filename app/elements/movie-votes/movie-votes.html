@@ -1,0 +1,132 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+
+<polymer-element name="movie-votes" attributes="mid">
+    <template>
+        <link rel="stylesheet" href="../../styles/movie-votes.css">
+
+        <div id="results" flex layout horizontal center>
+            <button id="stay" on-click="{{voteStay}}">{{stay_pct}}% Stay</button>
+            <span id="divider">/</span>
+            <button id="leave" on-click="{{voteLeave}}">{{leave_pct}}% Leave</button>
+        </div>
+        <div id="voteCount">{{total_votes}} votes</div>
+    </template>
+    <script>
+        (function () {
+            Polymer('movie-votes', {
+                mid: null,
+                stay_votes: 0,
+                leave_votes: 0,
+                total_votes: 0,
+                stay_pct: 0,
+                leave_pct: 0,
+                votes_ref: null,
+                selected_vote: '',
+                midChanged: function() {
+                    this.bindVotes();
+                },
+                detached: function() {
+                    this.unbindVotes();
+                },
+                unbindVotes: function() {
+                    if (this.votes_ref) {
+                        this.votes_ref.off();
+                        this.votes_ref = null;
+                    }
+                },
+                bindVotes: function() {
+                    var self = this;
+
+                    this.unbindVotes();
+                    this.selected_vote = this.getStoredVote();
+                    if (!this.mid || !window.SecondEndingFirebase || !window.SecondEndingFirebase.enabled) {
+                        this.updateVoteStats(0, 0);
+                        return;
+                    }
+
+                    this.votes_ref = window.SecondEndingFirebase.getVotesRef(this.mid);
+                    if (!this.votes_ref) {
+                        this.updateVoteStats(0, 0);
+                        return;
+                    }
+
+                    this.votes_ref.on('value', function(snapshot) {
+                        var value = snapshot.val() || {};
+                        self.updateVoteStats(Number(value.stay || 0), Number(value.leave || 0));
+                    });
+                },
+                updateVoteStats: function(stayVotes, leaveVotes) {
+                    var total = stayVotes + leaveVotes;
+                    this.stay_votes = stayVotes;
+                    this.leave_votes = leaveVotes;
+                    this.total_votes = total;
+                    this.stay_pct = total > 0 ? Math.round((stayVotes / total) * 100) : 0;
+                    this.leave_pct = total > 0 ? Math.round((leaveVotes / total) * 100) : 0;
+                },
+                voteStay: function() {
+                    this.vote('stay');
+                },
+                voteLeave: function() {
+                    this.vote('leave');
+                },
+                getVoteStorageKey: function() {
+                    return 'movieVote:' + String(this.mid || '');
+                },
+                getStoredVote: function() {
+                    var key;
+                    var value;
+                    if (!this.mid || !window.sessionStorage) {
+                        return '';
+                    }
+                    key = this.getVoteStorageKey();
+                    value = window.sessionStorage.getItem(key);
+                    return value === 'stay' || value === 'leave' ? value : '';
+                },
+                setStoredVote: function(value) {
+                    var key;
+                    if (!this.mid || !window.sessionStorage) {
+                        return;
+                    }
+                    key = this.getVoteStorageKey();
+                    if (!value) {
+                        window.sessionStorage.removeItem(key);
+                        return;
+                    }
+                    window.sessionStorage.setItem(key, value);
+                },
+                vote: function(voteKey) {
+                    var previousVote;
+                    var nextVote;
+                    if (!this.votes_ref) {
+                        return;
+                    }
+                    previousVote = this.getStoredVote();
+                    nextVote = previousVote === voteKey ? '' : voteKey;
+
+                    this.votes_ref.transaction(function(current) {
+                        var next = current || { stay: 0, leave: 0 };
+                        next.stay = Number(next.stay || 0);
+                        next.leave = Number(next.leave || 0);
+                        if (previousVote && next[previousVote] > 0) {
+                            next[previousVote] -= 1;
+                        }
+                        if (nextVote) {
+                            next[nextVote] += 1;
+                        }
+                        return next;
+                    }, function(error, committed) {
+                        if (error || !committed) {
+                            return;
+                        }
+                        this.selected_vote = nextVote;
+                        this.setStoredVote(nextVote);
+                    }.bind(this));
+                },
+                ready: function() {
+                    this.selected_vote = this.getStoredVote();
+                    this.bindVotes();
+                }
+            });
+        })();
+    </script>
+</polymer-element>
