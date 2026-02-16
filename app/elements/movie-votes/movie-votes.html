@@ -21,6 +21,7 @@
                 stay_pct: 0,
                 leave_pct: 0,
                 votes_ref: null,
+                selected_vote: '',
                 midChanged: function() {
                     this.bindVotes();
                 },
@@ -37,6 +38,7 @@
                     var self = this;
 
                     this.unbindVotes();
+                    this.selected_vote = this.getStoredVote();
                     if (!this.mid || !window.SecondEndingFirebase || !window.SecondEndingFirebase.enabled) {
                         this.updateVoteStats(0, 0);
                         return;
@@ -67,20 +69,61 @@
                 voteLeave: function() {
                     this.vote('leave');
                 },
+                getVoteStorageKey: function() {
+                    return 'movieVote:' + String(this.mid || '');
+                },
+                getStoredVote: function() {
+                    var key;
+                    var value;
+                    if (!this.mid || !window.sessionStorage) {
+                        return '';
+                    }
+                    key = this.getVoteStorageKey();
+                    value = window.sessionStorage.getItem(key);
+                    return value === 'stay' || value === 'leave' ? value : '';
+                },
+                setStoredVote: function(value) {
+                    var key;
+                    if (!this.mid || !window.sessionStorage) {
+                        return;
+                    }
+                    key = this.getVoteStorageKey();
+                    if (!value) {
+                        window.sessionStorage.removeItem(key);
+                        return;
+                    }
+                    window.sessionStorage.setItem(key, value);
+                },
                 vote: function(voteKey) {
+                    var previousVote;
+                    var nextVote;
                     if (!this.votes_ref) {
                         return;
                     }
+                    previousVote = this.getStoredVote();
+                    nextVote = previousVote === voteKey ? '' : voteKey;
 
                     this.votes_ref.transaction(function(current) {
                         var next = current || { stay: 0, leave: 0 };
                         next.stay = Number(next.stay || 0);
                         next.leave = Number(next.leave || 0);
-                        next[voteKey] += 1;
+                        if (previousVote && next[previousVote] > 0) {
+                            next[previousVote] -= 1;
+                        }
+                        if (nextVote) {
+                            next[nextVote] += 1;
+                        }
                         return next;
-                    });
+                    }, function(error, committed) {
+                        if (error || !committed) {
+                            return;
+                        }
+                        this.selected_vote = nextVote;
+                        this.setStoredVote(nextVote);
+                    }.bind(this));
                 },
                 ready: function() {
+                    this.selected_vote = this.getStoredVote();
                     this.bindVotes();
                 }
             });

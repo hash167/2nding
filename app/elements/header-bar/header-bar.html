@@ -8,6 +8,9 @@
 <polymer-element name="header-bar" attributes="">
     <template>
         <link rel="stylesheet" href="../../styles/header-bar.css">
+        <div id="logoWrap">
+            <img id="logo" src="../../images/2nding.gif" alt="2nding">
+        </div>
         <core-toolbar>
             <span id="inTheatersNow" flex hidden?="{{!search_is_off}}">In Theaters Now</span>
             <paper-input name="searchInput" id="searchInput" flex label="Search by title" hidden?="{{search_is_off}}" value="{{search_for_movie}}" on-keyup="{{value_search}}"></paper-input>

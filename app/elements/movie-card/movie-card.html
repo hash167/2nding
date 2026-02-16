@@ -4,9 +4,9 @@
 <polymer-element name="movie-card" attributes="mid mtitle poster">
     <template>
         <link rel="stylesheet" href="../../styles/movie-card.css">
-        <div layout horizontal>
-            <img id ="poster" src="{{poster}}" width="54" height="80" alt="{{title}}" />
-            <div flex layout vertical center>
+        <div id="cardRow" layout horizontal>
+            <img id ="poster" src="{{poster}}" width="82" height="120" alt="{{mtitle}}" />
+            <div id="cardBody" flex layout vertical center>
                 <div id="title">{{mtitle}}</div>
                 <movie-votes mid="{{mid}}"></movie-votes>
             </div>
@@ -17,7 +17,12 @@
             Polymer('movie-card', {
                 mid: null,
                 mtitle: null,
-                poster: null
+                poster: null,
+                mtitleChanged: function() {
+                    if (!this.mtitle) {
+                        this.mtitle = 'Untitled';
+                    }
+                }
             });
         })();
     </script>

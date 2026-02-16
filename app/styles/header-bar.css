@@ -1,6 +1,45 @@
+:host {
+    display: block;
+    width: 100%;
+}
+
+#logoWrap {
+    width: 100%;
+    text-align: center;
+    background: #fff;
+    padding: 10px 0 6px 0;
+}
+#logo {
+    width: 260px;
+    max-width: 85%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+}
+
 core-toolbar {
     background: #e93824;
     color: whitesmoke;
+    position: relative;
+    justify-content: center;
+}
+
+#inTheatersNow {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+}
+
+paper-icon-button {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+paper-input {
+    width: calc(100% - 64px);
 }
 
 

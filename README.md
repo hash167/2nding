@@ -36,6 +36,10 @@ State is managed in a simple component-driven way (no global state library):
   - backend uses TMDB when `TMDB_API_KEY` is present
   - backend falls back to local JSON when TMDB is unavailable.
 
+## Screenshot
+
+![Mobile app screenshot](app/images/mobile-image.png)
+
 ## Run locally
 
 Prerequisites:
