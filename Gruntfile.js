@@ -1,8 +1,96 @@
 'use strict';
 var LIVERELOAD_PORT = 35729;
+var fs = require('fs');
+var path = require('path');
+var https = require('https');
+var url = require('url');
 var lrSnippet = require('connect-livereload')({port: LIVERELOAD_PORT});
 var mountFolder = function (dir) {
   return require('serve-static')(require('path').resolve(dir));
+};
+
+var sendJson = function (res, statusCode, payload) {
+  res.statusCode = statusCode;
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.end(JSON.stringify(payload));
+};
+
+var mapTmdbToLegacyMovies = function (results) {
+  return (results || []).map(function (movie) {
+    var posterPath = movie.poster_path ? 'https://image.tmdb.org/t/p/w185' + movie.poster_path : '/images/poster.jpg';
+    return {
+      id: String(movie.id || ''),
+      title: movie.title || movie.original_title || 'Untitled',
+      synopsis: movie.overview || '',
+      posters: {
+        thumbnail: posterPath,
+        profile: posterPath,
+        detailed: posterPath,
+        original: posterPath
+      }
+    };
+  });
+};
+
+var movieApiMiddleware = function (req, res, next) {
+  var parsedUrl = url.parse(req.url, true);
+  var fallbackPath = path.resolve('app/scripts/in_theaters.json');
+
+  if (parsedUrl.pathname !== '/api/movies/now_playing') {
+    return next();
+  }
+
+  var serveFallback = function (reason) {
+    fs.readFile(fallbackPath, 'utf8', function (err, data) {
+      if (err) {
+        return sendJson(res, 500, {error: 'Unable to read fallback movie data.'});
+      }
+
+      try {
+        var parsed = JSON.parse(data);
+        parsed.source = 'fallback';
+        if (reason) {
+          parsed.fallback_reason = reason;
+        }
+        return sendJson(res, 200, parsed);
+      } catch (parseError) {
+        return sendJson(res, 500, {error: 'Fallback movie data is invalid JSON.'});
+      }
+    });
+  };
+
+  if (!process.env.TMDB_API_KEY) {
+    return serveFallback('TMDB_API_KEY is not set');
+  }
+
+  var page = parsedUrl.query.page || '1';
+  var tmdbUrl = 'https://api.themoviedb.org/3/movie/now_playing?api_key=' +
+    encodeURIComponent(process.env.TMDB_API_KEY) +
+    '&language=en-US&page=' + encodeURIComponent(page);
+
+  https.get(tmdbUrl, function (tmdbRes) {
+    var raw = '';
+    tmdbRes.setEncoding('utf8');
+    tmdbRes.on('data', function (chunk) { raw += chunk; });
+    tmdbRes.on('end', function () {
+      if (tmdbRes.statusCode >= 400) {
+        return serveFallback('TMDB request failed with status ' + tmdbRes.statusCode);
+      }
+
+      try {
+        var parsed = JSON.parse(raw);
+        return sendJson(res, 200, {
+          total: parsed.total_results || 0,
+          movies: mapTmdbToLegacyMovies(parsed.results),
+          source: 'tmdb'
+        });
+      } catch (err) {
+        return serveFallback('TMDB response could not be parsed');
+      }
+    });
+  }).on('error', function () {
+    return serveFallback('TMDB request failed');
+  });
 };
 
 // # Globbing
@@ -16,7 +104,6 @@ module.exports = function (grunt) {
   require('time-grunt')(grunt);
   // load all grunt tasks
   require('load-grunt-tasks')(grunt);
-  grunt.loadNpmTasks('web-component-tester');
 
   // configurable paths
   var yeomanConfig = {
@@ -88,6 +175,7 @@ module.exports = function (grunt) {
           middleware: function () {
             return [
               lrSnippet,
+              movieApiMiddleware,
               mountFolder('.tmp'),
               mountFolder(yeomanConfig.app)
             ];
@@ -102,6 +190,7 @@ module.exports = function (grunt) {
           middleware: function () {
             return [
               mountFolder('.tmp'),
+              movieApiMiddleware,
               mountFolder(yeomanConfig.app)
             ];
           },
@@ -168,16 +257,6 @@ module.exports = function (grunt) {
         }
       }
     },
-    imagemin: {
-      dist: {
-        files: [{
-          expand: true,
-          cwd: '<%= yeoman.app %>/images',
-          src: '{,*/}*.{png,jpg,jpeg,svg}',
-          dest: '<%= yeoman.dist %>/images'
-        }]
-      }
-    },
     cssmin: {
       main: {
         files: {
@@ -237,24 +316,6 @@ module.exports = function (grunt) {
         }]
       }
     },
-    'wct-test': {
-      options: {
-        root: '<%= yeoman.app %>',
-        plugins: {
-          serveStatic: {
-            middleware: function() {
-              return mountFolder('.tmp');
-            }
-          }
-        }
-      },
-      local: {
-        options: {remote: false}
-      },
-      remote: {
-        options: {remote: true}
-      }
-    },
     // See this tutorial if you'd like to run PageSpeed
     // against localhost: http://www.jamescryer.com/2014/06/12/grunt-pagespeed-and-ngrok-locally-testing/
     pagespeed: {
@@ -297,15 +358,18 @@ module.exports = function (grunt) {
     ]);
   });
 
-  grunt.registerTask('test', ['wct-test:local']);
+  grunt.registerTask('test', 'Legacy project has no runnable automated tests.', function () {
+    grunt.log.ok('No automated tests configured.');
+  });
   grunt.registerTask('test:browser', ['connect:test']);
-  grunt.registerTask('test:remote', ['wct-test:remote']);
+  grunt.registerTask('test:remote', 'Legacy project has no runnable remote tests.', function () {
+    grunt.log.ok('No remote tests configured.');
+  });
 
   grunt.registerTask('build', [
     'clean:dist',
     'copy',
     'useminPrepare',
-    'imagemin',
     'concat',
     'autoprefixer',
     'uglify',

@@ -1,0 +1,22 @@
+#stay {
+    color: green;
+}
+#leave {
+    color: red;
+}
+#stay,
+#leave {
+    border: 0;
+    background: transparent;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+#divider {
+    margin: 0 5px;
+}
+#voteCount {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #666;
+}

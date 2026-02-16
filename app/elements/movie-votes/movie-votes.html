@@ -1,0 +1,89 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+
+<polymer-element name="movie-votes" attributes="mid">
+    <template>
+        <link rel="stylesheet" href="../../styles/movie-votes.css">
+
+        <div id="results" flex layout horizontal center>
+            <button id="stay" on-click="{{voteStay}}">{{stay_pct}}% Stay</button>
+            <span id="divider">/</span>
+            <button id="leave" on-click="{{voteLeave}}">{{leave_pct}}% Leave</button>
+        </div>
+        <div id="voteCount">{{total_votes}} votes</div>
+    </template>
+    <script>
+        (function () {
+            Polymer('movie-votes', {
+                mid: null,
+                stay_votes: 0,
+                leave_votes: 0,
+                total_votes: 0,
+                stay_pct: 0,
+                leave_pct: 0,
+                votes_ref: null,
+                midChanged: function() {
+                    this.bindVotes();
+                },
+                detached: function() {
+                    this.unbindVotes();
+                },
+                unbindVotes: function() {
+                    if (this.votes_ref) {
+                        this.votes_ref.off();
+                        this.votes_ref = null;
+                    }
+                },
+                bindVotes: function() {
+                    var self = this;
+
+                    this.unbindVotes();
+                    if (!this.mid || !window.SecondEndingFirebase || !window.SecondEndingFirebase.enabled) {
+                        this.updateVoteStats(0, 0);
+                        return;
+                    }
+
+                    this.votes_ref = window.SecondEndingFirebase.getVotesRef(this.mid);
+                    if (!this.votes_ref) {
+                        this.updateVoteStats(0, 0);
+                        return;
+                    }
+
+                    this.votes_ref.on('value', function(snapshot) {
+                        var value = snapshot.val() || {};
+                        self.updateVoteStats(Number(value.stay || 0), Number(value.leave || 0));
+                    });
+                },
+                updateVoteStats: function(stayVotes, leaveVotes) {
+                    var total = stayVotes + leaveVotes;
+                    this.stay_votes = stayVotes;
+                    this.leave_votes = leaveVotes;
+                    this.total_votes = total;
+                    this.stay_pct = total > 0 ? Math.round((stayVotes / total) * 100) : 0;
+                    this.leave_pct = total > 0 ? Math.round((leaveVotes / total) * 100) : 0;
+                },
+                voteStay: function() {
+                    this.vote('stay');
+                },
+                voteLeave: function() {
+                    this.vote('leave');
+                },
+                vote: function(voteKey) {
+                    if (!this.votes_ref) {
+                        return;
+                    }
+
+                    this.votes_ref.transaction(function(current) {
+                        var next = current || { stay: 0, leave: 0 };
+                        next.stay = Number(next.stay || 0);
+                        next.leave = Number(next.leave || 0);
+                        next[voteKey] += 1;
+                        return next;
+                    });
+                },
+                ready: function() {
+                    this.bindVotes();
+                }
+            });
+        })();
+    </script>
+</polymer-element>
